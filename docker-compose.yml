@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  core-api:
+    build: ./core-api
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    depends_on:
+      - postgres
+      - redis
+    # TODO: Add volumes for hot-reloading in dev
+
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+    # TODO: Add volumes for Next.js hot-reloading
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: sentinelx
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: sentinelx
+    ports:
+      - "5432:5432"
+    # TODO: Map volume for persistent DB storage
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  scanner-node:
+    build: ./plugins/scanners/python-nmap-wrapper
+    environment:
+      - CORE_API_URL=http://core-api:8080
+    depends_on:
+      - core-api
